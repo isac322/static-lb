@@ -1,0 +1,6 @@
+domain: bhyoo.com
+layout:
+- go.kubebuilder.io/v3
+projectName: static-lb
+repo: github.com/isac322/static-lb
+version: "3"
