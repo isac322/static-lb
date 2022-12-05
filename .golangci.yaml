@@ -1,0 +1,7 @@
+linters:
+  enable:
+    - bodyclose
+    - revive
+    - lll
+    - paralleltest
+    - tparallel
