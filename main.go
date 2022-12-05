@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -32,6 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/isac322/static-lb/controllers"
+	"github.com/isac322/static-lb/internal/application"
+	"github.com/isac322/static-lb/internal/infrastructure"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -87,9 +90,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	var (
+		nodeRepo          = infrastructure.NewNodeRepository(mgr.GetClient())
+		svcRepo           = infrastructure.NewServiceRepository(mgr.GetClient())
+		endpointSliceRepo = infrastructure.NewEndpointSliceRepository(mgr.GetClient())
+		usecase           = application.New(endpointSliceRepo, nodeRepo, svcRepo)
+	)
+
+	if err = endpointSliceRepo.RegisterFieldIndex(context.Background(), mgr.GetFieldIndexer()); err != nil {
+		setupLog.Error(err, "unable to register index", "resource", "EndpointSlice")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.ServiceReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+		Usecase: usecase,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Service")
 		os.Exit(1)
