@@ -49,7 +49,7 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
 
       - run: |
-          sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
+          sed -e '1 s/\(^FROM\)/FROM --platform=$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
 
       - name: Build
         uses: docker/build-push-action@v3
