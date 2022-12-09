@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-
 	"github.com/isac322/static-lb/internal/application"
 	"github.com/isac322/static-lb/internal/pkg/endpointslice"
 
