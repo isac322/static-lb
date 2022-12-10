@@ -75,3 +75,5 @@ jobs:
           push: false
           file: Dockerfile.cross
           platforms: ${{ env.PLATFORMS }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=min
