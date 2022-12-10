@@ -1,0 +1,15 @@
+{{/*apiVersion: v1*/}}
+{{/*kind: Pod*/}}
+{{/*metadata:*/}}
+{{/*  name: "{{ include "static-lb.fullname" . }}-test-connection"*/}}
+{{/*  labels:*/}}
+{{/*    {{- include "static-lb.labels" . | nindent 4 }}*/}}
+{{/*  annotations:*/}}
+{{/*    "helm.sh/hook": test*/}}
+{{/*spec:*/}}
+{{/*  containers:*/}}
+{{/*    - name: wget*/}}
+{{/*      image: busybox*/}}
+{{/*      command: ['wget']*/}}
+{{/*      args: ['{{ include "static-lb.fullname" . }}:{{ .Values.service.port }}']*/}}
+{{/*  restartPolicy: Never*/}}
