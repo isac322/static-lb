@@ -40,6 +40,8 @@ var k8sClient client.Client
 var testEnv *envtest.Environment
 
 func TestAPIs(t *testing.T) {
+	t.Parallel()
+
 	RegisterFailHandler(Fail)
 
 	RunSpecs(t, "Controller Suite")

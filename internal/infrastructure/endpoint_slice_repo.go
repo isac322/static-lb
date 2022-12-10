@@ -49,9 +49,7 @@ func (k K8sClientEndpointSliceRepository) RegisterFieldIndex(ctx context.Context
 			if epSlice == nil || !ok {
 				return nil
 			}
-			serviceKey, err := endpointslice.ServiceKeyForSlice(epSlice)
-			if err != nil {
-			}
+			serviceKey, _ := endpointslice.ServiceKeyForSlice(epSlice)
 			return []string{serviceKey.String()}
 		},
 	)
