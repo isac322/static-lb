@@ -1,0 +1,53 @@
+name: Release Charts
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - charts/**
+      - .github/workflows/release-charts.yaml
+
+  workflow_dispatch:
+
+jobs:
+  release:
+    env:
+      CHART_DIR: charts
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3.4
+
+      - name: Install yq - portable yaml processor
+        uses: mikefarah/yq@v4.30.5
+
+      - name: Helm Deps
+        run: |
+          for dir in $(ls -d '${{ env.CHART_DIR }}'/*); do
+            helm dependency update $dir;
+            if [ -f "$dir/Chart.lock" ]; then
+              yq --indent 0 '.dependencies | map(["helm", "repo", "add", .name, .repository] | join(" ")) | .[]' "$dir/Chart.lock"  | sh --;
+            fi
+          done
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.4.1
+        with:
+          charts_dir: ${{ env.CHART_DIR }}
+          charts_repo_url: https://charts.bhyoo.com
+        env:
+          CR_TOKEN: "${{ secrets.CHART_GITHUB_TOKEN }}"
+          CR_GIT_REPO: helm-charts
