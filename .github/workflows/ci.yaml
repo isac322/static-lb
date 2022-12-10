@@ -50,7 +50,8 @@ jobs:
           install: true
           platforms: ${{ env.PLATFORMS }}
 
-      - run: |
+      - name: Generate Dockerfile for multi-arch build
+        run: |
           sed -e '1 s/\(^FROM\)/FROM --platform=$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
 
       - name: Enable buildkit cache
