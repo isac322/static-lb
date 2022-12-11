@@ -2,12 +2,12 @@ package application
 
 import (
 	"context"
-	discoveryv1 "k8s.io/api/discovery/v1"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/isac322/static-lb/internal/pkg/slices"
 
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type Usecase interface {

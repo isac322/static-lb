@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	"github.com/isac322/static-lb/internal/application"
 	"github.com/isac322/static-lb/internal/pkg/endpointslice"
 
@@ -26,9 +27,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -68,7 +72,13 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	logger.Info("updated IPs")
+	logger.Info(
+		"IP updated",
+		"ingressIPs",
+		service.Status.LoadBalancer.Ingress,
+		"externalIPs",
+		service.Spec.ExternalIPs,
+	)
 
 	return ctrl.Result{}, nil
 }
@@ -76,7 +86,31 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // SetupWithManager sets up the controller with the Manager.
 func (r *ServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Service{}).
+		For(
+			&corev1.Service{},
+			builder.WithPredicates(predicate.Funcs{
+				CreateFunc: func(e event.CreateEvent) bool {
+					service, ok := e.Object.(*corev1.Service)
+					if !ok {
+						return false
+					}
+					return service.Spec.Type == corev1.ServiceTypeLoadBalancer
+				},
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					newService, ok := e.ObjectNew.(*corev1.Service)
+					if !ok {
+						return false
+					}
+					oldService, ok := e.ObjectOld.(*corev1.Service)
+					if !ok {
+						return false
+					}
+
+					return oldService.Spec.Type == corev1.ServiceTypeLoadBalancer ||
+						newService.Spec.Type == corev1.ServiceTypeLoadBalancer
+				},
+			}),
+		).
 		Watches(
 			&source.Kind{Type: &discoveryv1.EndpointSlice{}},
 			handler.EnqueueRequestsFromMapFunc(r.findLinkedServiceByEndpointSlice),
