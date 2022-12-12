@@ -24,14 +24,14 @@ func (k K8sClientServiceRepository) AssignIPs(
 	target application.IPStatus,
 ) error {
 	newSvc := svc.DeepCopy()
-	newSvc.Spec.ExternalIPs = target.IngressIPs
+	newSvc.Spec.ExternalIPs = target.ExternalIPs
 
 	if err := k.k8sClient.Update(ctx, newSvc); err != nil {
 		return err
 	}
 
-	newSvc.Status.LoadBalancer.Ingress = make([]corev1.LoadBalancerIngress, len(target.ExternalIPs))
-	for i, ip := range target.ExternalIPs {
+	newSvc.Status.LoadBalancer.Ingress = make([]corev1.LoadBalancerIngress, len(target.IngressIPs))
+	for i, ip := range target.IngressIPs {
 		newSvc.Status.LoadBalancer.Ingress[i].IP = ip
 	}
 
