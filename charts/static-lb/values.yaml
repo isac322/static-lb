@@ -56,3 +56,10 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# where to assign node's internal ips (enum: ingress, external)
+internalIPMappings: []
+
+# where to assign node's internal ips (enum: ingress, external)
+externalIPMappings:
+  - ingress
