@@ -1,7 +1,6 @@
 package presentation
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/isac322/static-lb/internal/application"
@@ -25,6 +24,6 @@ func (f *IPMappingTargets) Set(s string) error {
 		f.value = append(f.value, t)
 		return nil
 	default:
-		return errors.New(fmt.Sprintf("invalid mapping target: %s", s))
+		return fmt.Errorf("invalid mapping target: %s", s)
 	}
 }
