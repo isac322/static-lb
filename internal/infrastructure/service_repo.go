@@ -18,7 +18,11 @@ func NewServiceRepository(cli client.Client) K8sClientServiceRepository {
 	}
 }
 
-func (k K8sClientServiceRepository) AssignIPs(ctx context.Context, svc corev1.Service, target application.IPStatus) error {
+func (k K8sClientServiceRepository) AssignIPs(
+	ctx context.Context,
+	svc corev1.Service,
+	target application.IPStatus,
+) error {
 	newSvc := svc.DeepCopy()
 	newSvc.Spec.ExternalIPs = target.IngressIPs
 
