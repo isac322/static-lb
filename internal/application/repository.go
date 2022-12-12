@@ -9,7 +9,7 @@ import (
 )
 
 type ServiceRepository interface {
-	AssignIPs(ctx context.Context, svc corev1.Service, target IPs) error
+	AssignIPs(ctx context.Context, svc corev1.Service, target IPStatus) error
 }
 
 type EndpointSliceRepository interface {

@@ -35,6 +35,7 @@ import (
 	"github.com/isac322/static-lb/controllers"
 	"github.com/isac322/static-lb/internal/application"
 	"github.com/isac322/static-lb/internal/infrastructure"
+	"github.com/isac322/static-lb/internal/presentation"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -53,11 +54,37 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
+	var internalIPMappings presentation.IPMappingTargets
+	var externalIPMappings presentation.IPMappingTargets
+	flag.StringVar(
+		&metricsAddr,
+		"metrics-bind-address",
+		":8080",
+		"The address the metric endpoint binds to.",
+	)
+	flag.StringVar(
+		&probeAddr,
+		"health-probe-bind-address",
+		":8081",
+		"The address the probe endpoint binds to.",
+	)
+	flag.BoolVar(
+		&enableLeaderElection,
+		"leader-elect",
+		false,
 		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
+			"Enabling this will ensure there is only one active controller manager.",
+	)
+	flag.Var(
+		&internalIPMappings,
+		"internal-ip-mapping",
+		"where to assign node's internal ips (enum: ingress, external).",
+	)
+	flag.Var(
+		&externalIPMappings,
+		"external-ip-mapping",
+		"where to assign node's external ips (enum: ingress, external).",
+	)
 	opts := zap.Options{
 		Development: true,
 	}
@@ -103,9 +130,11 @@ func main() {
 	}
 
 	if err = (&controllers.ServiceReconciler{
-		Client:  mgr.GetClient(),
-		Scheme:  mgr.GetScheme(),
-		Usecase: usecase,
+		Client:                    mgr.GetClient(),
+		Scheme:                    mgr.GetScheme(),
+		Usecase:                   usecase,
+		DefaultInternalIPMappings: internalIPMappings.Mappings(),
+		DefaultExternalIPMappings: externalIPMappings.Mappings(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Service")
 		os.Exit(1)

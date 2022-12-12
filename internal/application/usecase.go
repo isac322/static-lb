@@ -11,7 +11,12 @@ import (
 )
 
 type Usecase interface {
-	AssignIPs(ctx context.Context, svc corev1.Service) error
+	AssignIPs(
+		ctx context.Context,
+		svc corev1.Service,
+		internalIPMappings []IPMappingTarget,
+		externalIPMappings []IPMappingTarget,
+	) error
 }
 
 type usecase struct {
@@ -28,15 +33,20 @@ func New(esr EndpointSliceRepository, nr NodeRepository, sr ServiceRepository) U
 	}
 }
 
-func (u usecase) AssignIPs(ctx context.Context, svc corev1.Service) (err error) {
-	var targetIPs IPs
+func (u usecase) AssignIPs(
+	ctx context.Context,
+	svc corev1.Service,
+	internalIPMappings []IPMappingTarget,
+	externalIPMappings []IPMappingTarget,
+) (err error) {
+	var endpointIPs EndpointIPs
 
 	switch {
 	case svc.Spec.Type != corev1.ServiceTypeLoadBalancer:
 		// reset ips
 		break
 	case svc.Spec.ExternalTrafficPolicy == corev1.ServiceExternalTrafficPolicyTypeLocal:
-		if targetIPs, err = u.getIPsFromEndpointSlice(ctx, svc); err != nil {
+		if endpointIPs, err = u.getIPsFromEndpointSlice(ctx, svc); err != nil {
 			return err
 		}
 	case svc.Spec.ExternalTrafficPolicy == corev1.ServiceExternalTrafficPolicyTypeCluster:
@@ -48,12 +58,34 @@ func (u usecase) AssignIPs(ctx context.Context, svc corev1.Service) (err error) 
 			break
 		}
 
-		if targetIPs, err = u.getIPsFromAllNodes(ctx); err != nil {
+		if endpointIPs, err = u.getIPsFromAllNodes(ctx); err != nil {
 			return err
 		}
 	default:
 		// Ignore others
 		return nil
+	}
+
+	var targetIPs IPStatus
+	for _, mapping := range internalIPMappings {
+		switch mapping {
+		case IPMappingTargetExternal:
+			targetIPs.ExternalIPs = append(targetIPs.ExternalIPs, endpointIPs.InternalIPs...)
+		case IPMappingTargetIngress:
+			targetIPs.IngressIPs = append(targetIPs.IngressIPs, endpointIPs.InternalIPs...)
+		default:
+			break
+		}
+	}
+	for _, mapping := range externalIPMappings {
+		switch mapping {
+		case IPMappingTargetExternal:
+			targetIPs.ExternalIPs = append(targetIPs.ExternalIPs, endpointIPs.ExternalIPs...)
+		case IPMappingTargetIngress:
+			targetIPs.IngressIPs = append(targetIPs.IngressIPs, endpointIPs.ExternalIPs...)
+		default:
+			break
+		}
 	}
 
 	if u.isSynced(svc, targetIPs) {
@@ -63,7 +95,7 @@ func (u usecase) AssignIPs(ctx context.Context, svc corev1.Service) (err error) 
 	return u.serviceRepo.AssignIPs(ctx, svc, targetIPs)
 }
 
-func (u usecase) isSynced(svc corev1.Service, targetIPs IPs) bool {
+func (u usecase) isSynced(svc corev1.Service, targetIPs IPStatus) bool {
 	origIngressIPs := make([]string, len(svc.Status.LoadBalancer.Ingress))
 	for i, ingress := range svc.Status.LoadBalancer.Ingress {
 		origIngressIPs[i] = ingress.IP
@@ -72,26 +104,26 @@ func (u usecase) isSynced(svc corev1.Service, targetIPs IPs) bool {
 		slices.Match(targetIPs.IngressIPs, origIngressIPs)
 }
 
-func (u usecase) getIPsFromAllNodes(ctx context.Context) (IPs, error) {
+func (u usecase) getIPsFromAllNodes(ctx context.Context) (EndpointIPs, error) {
 	nodes, err := u.nodeRepo.ListReady(ctx)
 	if err != nil {
-		return IPs{}, err
+		return EndpointIPs{}, err
 	}
 
 	return u.extractIPsFrom(nodes), nil
 }
 
-func (u usecase) getIPsFromEndpointSlice(ctx context.Context, svc corev1.Service) (IPs, error) {
+func (u usecase) getIPsFromEndpointSlice(ctx context.Context, svc corev1.Service) (EndpointIPs, error) {
 	endpoints, err := u.getServingEndpointsFromSlice(ctx, svc)
 	if err != nil {
-		return IPs{}, err
+		return EndpointIPs{}, err
 	}
 
 	nodes := make([]corev1.Node, 0, len(endpoints))
 	for _, endpoint := range endpoints {
 		node, err := u.nodeRepo.GetByName(ctx, *endpoint.NodeName)
 		if err != nil {
-			return IPs{}, err
+			return EndpointIPs{}, err
 		}
 		nodes = append(nodes, node)
 	}
@@ -122,12 +154,12 @@ func (u usecase) getServingEndpointsFromSlice(ctx context.Context, svc corev1.Se
 	return endpoints, nil
 }
 
-func (u usecase) extractIPsFrom(nodes []corev1.Node) (result IPs) {
+func (u usecase) extractIPsFrom(nodes []corev1.Node) (result EndpointIPs) {
 	for _, node := range nodes {
 		for _, address := range node.Status.Addresses {
 			switch address.Type {
 			case corev1.NodeInternalIP:
-				result.IngressIPs = append(result.IngressIPs, address.Address)
+				result.InternalIPs = append(result.InternalIPs, address.Address)
 			case corev1.NodeExternalIP:
 				result.ExternalIPs = append(result.ExternalIPs, address.Address)
 			}
