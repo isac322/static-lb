@@ -73,5 +73,5 @@ includeExternalIPNets: []
 # IP networks that filters Ingress IP candidates out before assign. (e.g. 10.0.0.0/8 or 2603:c022:8005:302::/64)
 excludeIngressIPNets: []
 
-# IP networks that filters Ingress IP candidates out before assign. (e.g. 10.0.0.0/8 or 2603:c022:8005:302::/64)
+# IP networks that filters External IP candidates out before assign. (e.g. 10.0.0.0/8 or 2603:c022:8005:302::/64)
 excludeExternalIPNets: []
