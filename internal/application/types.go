@@ -5,7 +5,7 @@ type IPStatus struct {
 	ExternalIPs []string
 }
 
-type EndpointIPs struct {
+type NodeIPs struct {
 	InternalIPs []string
 	ExternalIPs []string
 }

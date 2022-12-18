@@ -39,7 +39,7 @@ func (u usecase) AssignIPs(
 	internalIPMappings []IPMappingTarget,
 	externalIPMappings []IPMappingTarget,
 ) (err error) {
-	var endpointIPs EndpointIPs
+	var endpointIPs NodeIPs
 
 	switch {
 	case svc.Spec.Type != corev1.ServiceTypeLoadBalancer:
@@ -104,26 +104,26 @@ func (u usecase) isSynced(svc corev1.Service, targetIPs IPStatus) bool {
 		slices.Match(targetIPs.IngressIPs, origIngressIPs)
 }
 
-func (u usecase) getIPsFromAllNodes(ctx context.Context) (EndpointIPs, error) {
+func (u usecase) getIPsFromAllNodes(ctx context.Context) (NodeIPs, error) {
 	nodes, err := u.nodeRepo.ListReady(ctx)
 	if err != nil {
-		return EndpointIPs{}, err
+		return NodeIPs{}, err
 	}
 
 	return u.extractIPsFrom(nodes), nil
 }
 
-func (u usecase) getIPsFromEndpointSlice(ctx context.Context, svc corev1.Service) (EndpointIPs, error) {
+func (u usecase) getIPsFromEndpointSlice(ctx context.Context, svc corev1.Service) (NodeIPs, error) {
 	endpoints, err := u.getServingEndpointsFromSlice(ctx, svc)
 	if err != nil {
-		return EndpointIPs{}, err
+		return NodeIPs{}, err
 	}
 
 	nodes := make([]corev1.Node, 0, len(endpoints))
 	for _, endpoint := range endpoints {
 		node, err := u.nodeRepo.GetByName(ctx, *endpoint.NodeName)
 		if err != nil {
-			return EndpointIPs{}, err
+			return NodeIPs{}, err
 		}
 		nodes = append(nodes, node)
 	}
@@ -154,7 +154,7 @@ func (u usecase) getServingEndpointsFromSlice(ctx context.Context, svc corev1.Se
 	return endpoints, nil
 }
 
-func (u usecase) extractIPsFrom(nodes []corev1.Node) (result EndpointIPs) {
+func (u usecase) extractIPsFrom(nodes []corev1.Node) (result NodeIPs) {
 	for _, node := range nodes {
 		for _, address := range node.Status.Addresses {
 			switch address.Type {
