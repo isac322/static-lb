@@ -54,7 +54,7 @@ jobs:
         with:
           builder: buildx_buildkit_${{ steps.buildx.outputs.name }}0
           cache-path: /tmp/buildkit-cache
-          cache-max-size: 4g
+          cache-max-size: 8g
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
