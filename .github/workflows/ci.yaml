@@ -68,7 +68,7 @@ jobs:
         with:
           builder: buildx_buildkit_${{ steps.buildx.outputs.name }}0
           cache-path: /tmp/buildkit-cache
-          cache-max-size: 4g
+          cache-max-size: 8g
 
       - name: Build
         uses: docker/build-push-action@v3
