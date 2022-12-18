@@ -37,7 +37,7 @@ func (u usecase) filterTargetIPs(targetIPs IPStatus, svc corev1.Service) IPStatu
 
 func getIPNetFrom(svc corev1.Service, annotationName string, defaultVal []*net.IPNet) []*net.IPNet {
 	val, exists := svc.Annotations[annotationName]
-	if !exists || val == "" {
+	if !exists {
 		return defaultVal
 	}
 
@@ -52,9 +52,6 @@ func getIPNetFrom(svc corev1.Service, annotationName string, defaultVal []*net.I
 		ipv4Nets = append(ipv4Nets, ipNet)
 	}
 
-	if len(ipv4Nets) == 0 {
-		return defaultVal
-	}
 	return ipv4Nets
 }
 
