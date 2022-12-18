@@ -33,7 +33,6 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     env:
       PLATFORMS: linux/amd64,linux/arm64/v8,linux/arm/v7,linux/ppc64le,linux/s390x
     steps:
