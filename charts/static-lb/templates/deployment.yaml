@@ -34,17 +34,17 @@ spec:
             {{- range $mapping := .Values.externalIPMappings }}
             - --external-ip-mapping={{ $mapping }}
             {{- end }}
-            {{- with .Values.includeIngressIPNets }}
-            - --include-ingress-ip-nets={{ join "," . | quote }}
+            {{- range $net := .Values.includeIngressIPNets }}
+            - --include-ingress-ip-net={{ $net }}
             {{- end }}
-            {{- with .Values.includeExternalIPNets }}
-            - --include-external-ip-nets={{ join "," . | quote }}
+            {{- range $net := .Values.includeExternalIPNets }}
+            - --include-external-ip-net={{ $net }}
             {{- end }}
-            {{- with .Values.excludeIngressIPNets }}
-            - --exclude-ingress-ip-nets={{ join "," . | quote }}
+            {{- range $net := .Values.excludeIngressIPNets }}
+            - --exclude-ingress-ip-net={{ $net }}
             {{- end }}
-            {{- with .Values.excludeExternalIPNets }}
-            - --exclude-external-ip-nets={{ join "," . | quote }}
+            {{- range $net := .Values.excludeExternalIPNets }}
+            - --exclude-external-ip-net={{ $net }}
             {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
