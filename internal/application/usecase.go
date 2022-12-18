@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"net"
 
 	"github.com/isac322/static-lb/internal/pkg/slices"
 
@@ -11,35 +12,47 @@ import (
 )
 
 type Usecase interface {
-	AssignIPs(
-		ctx context.Context,
-		svc corev1.Service,
-		internalIPMappings []IPMappingTarget,
-		externalIPMappings []IPMappingTarget,
-	) error
+	AssignIPs(ctx context.Context, svc corev1.Service) error
 }
 
 type usecase struct {
-	endpointSliceRepo EndpointSliceRepository
-	nodeRepo          NodeRepository
-	serviceRepo       ServiceRepository
+	endpointSliceRepo               EndpointSliceRepository
+	nodeRepo                        NodeRepository
+	serviceRepo                     ServiceRepository
+	defaultInternalIPMappings       []IPMappingTarget
+	defaultExternalIPMappings       []IPMappingTarget
+	defaultIncludeIngressIPNetwork  []*net.IPNet
+	defaultIncludeExternalIPNetwork []*net.IPNet
+	defaultExcludeIngressIPNetwork  []*net.IPNet
+	defaultExcludeExternalIPNetwork []*net.IPNet
 }
 
-func New(esr EndpointSliceRepository, nr NodeRepository, sr ServiceRepository) Usecase {
+func New(
+	esr EndpointSliceRepository,
+	nr NodeRepository,
+	sr ServiceRepository,
+	defaultInternalIPMappings []IPMappingTarget,
+	defaultExternalIPMappings []IPMappingTarget,
+	defaultIncludeIngressIPNetwork []*net.IPNet,
+	defaultIncludeExternalIPNetwork []*net.IPNet,
+	defaultExcludeIngressIPNetwork []*net.IPNet,
+	defaultExcludeExternalIPNetwork []*net.IPNet,
+) Usecase {
 	return usecase{
-		endpointSliceRepo: esr,
-		nodeRepo:          nr,
-		serviceRepo:       sr,
+		endpointSliceRepo:               esr,
+		nodeRepo:                        nr,
+		serviceRepo:                     sr,
+		defaultInternalIPMappings:       defaultInternalIPMappings,
+		defaultExternalIPMappings:       defaultExternalIPMappings,
+		defaultIncludeIngressIPNetwork:  defaultIncludeIngressIPNetwork,
+		defaultIncludeExternalIPNetwork: defaultIncludeExternalIPNetwork,
+		defaultExcludeIngressIPNetwork:  defaultExcludeIngressIPNetwork,
+		defaultExcludeExternalIPNetwork: defaultExcludeExternalIPNetwork,
 	}
 }
 
-func (u usecase) AssignIPs(
-	ctx context.Context,
-	svc corev1.Service,
-	internalIPMappings []IPMappingTarget,
-	externalIPMappings []IPMappingTarget,
-) (err error) {
-	var endpointIPs EndpointIPs
+func (u usecase) AssignIPs(ctx context.Context, svc corev1.Service) (err error) {
+	var endpointIPs NodeIPs
 
 	switch {
 	case svc.Spec.Type != corev1.ServiceTypeLoadBalancer:
@@ -67,7 +80,7 @@ func (u usecase) AssignIPs(
 	}
 
 	var targetIPs IPStatus
-	for _, mapping := range internalIPMappings {
+	for _, mapping := range u.defaultInternalIPMappings {
 		switch mapping {
 		case IPMappingTargetExternal:
 			targetIPs.ExternalIPs = append(targetIPs.ExternalIPs, endpointIPs.InternalIPs...)
@@ -77,7 +90,7 @@ func (u usecase) AssignIPs(
 			break
 		}
 	}
-	for _, mapping := range externalIPMappings {
+	for _, mapping := range u.defaultExternalIPMappings {
 		switch mapping {
 		case IPMappingTargetExternal:
 			targetIPs.ExternalIPs = append(targetIPs.ExternalIPs, endpointIPs.ExternalIPs...)
@@ -87,6 +100,8 @@ func (u usecase) AssignIPs(
 			break
 		}
 	}
+
+	targetIPs = u.filterTargetIPs(targetIPs, svc)
 
 	if u.isSynced(svc, targetIPs) {
 		return nil
@@ -104,26 +119,26 @@ func (u usecase) isSynced(svc corev1.Service, targetIPs IPStatus) bool {
 		slices.Match(targetIPs.IngressIPs, origIngressIPs)
 }
 
-func (u usecase) getIPsFromAllNodes(ctx context.Context) (EndpointIPs, error) {
+func (u usecase) getIPsFromAllNodes(ctx context.Context) (NodeIPs, error) {
 	nodes, err := u.nodeRepo.ListReady(ctx)
 	if err != nil {
-		return EndpointIPs{}, err
+		return NodeIPs{}, err
 	}
 
 	return u.extractIPsFrom(nodes), nil
 }
 
-func (u usecase) getIPsFromEndpointSlice(ctx context.Context, svc corev1.Service) (EndpointIPs, error) {
+func (u usecase) getIPsFromEndpointSlice(ctx context.Context, svc corev1.Service) (NodeIPs, error) {
 	endpoints, err := u.getServingEndpointsFromSlice(ctx, svc)
 	if err != nil {
-		return EndpointIPs{}, err
+		return NodeIPs{}, err
 	}
 
 	nodes := make([]corev1.Node, 0, len(endpoints))
 	for _, endpoint := range endpoints {
 		node, err := u.nodeRepo.GetByName(ctx, *endpoint.NodeName)
 		if err != nil {
-			return EndpointIPs{}, err
+			return NodeIPs{}, err
 		}
 		nodes = append(nodes, node)
 	}
@@ -154,7 +169,7 @@ func (u usecase) getServingEndpointsFromSlice(ctx context.Context, svc corev1.Se
 	return endpoints, nil
 }
 
-func (u usecase) extractIPsFrom(nodes []corev1.Node) (result EndpointIPs) {
+func (u usecase) extractIPsFrom(nodes []corev1.Node) (result NodeIPs) {
 	for _, node := range nodes {
 		for _, address := range node.Status.Addresses {
 			switch address.Type {
