@@ -92,23 +92,23 @@ func main() {
 	)
 	flag.Var(
 		&includeIngressIPFilter,
-		"include-ingress-ip-nets",
-		"comma separated IP networks that filters Ingress IP candidates before assign. (default: empty)",
+		"include-ingress-ip-net",
+		"IP networks that filters Ingress IP candidates before assign. (default: empty)",
 	)
 	flag.Var(
 		&includeExternalIPFilter,
-		"include-external-ip-nets",
-		"comma separated IP networks that filters External IP candidates before assign. (default: empty)",
+		"include-external-ip-net",
+		"IP networks that filters External IP candidates before assign. (default: empty)",
 	)
 	flag.Var(
 		&excludeIngressIPFilter,
-		"exclude-ingress-ip-nets",
-		"comma separated IP networks that filters Ingress IP candidates out before assign. (default: empty)",
+		"exclude-ingress-ip-net",
+		"IP networks that filters Ingress IP candidates out before assign. (default: empty)",
 	)
 	flag.Var(
 		&excludeExternalIPFilter,
-		"exclude-external-ip-nets",
-		"comma separated IP networks that filters External IP candidates out before assign. (default: empty)",
+		"exclude-external-ip-net",
+		"IP networks that filters External IP candidates out before assign. (default: empty)",
 	)
 	opts := zap.Options{
 		Development: true,

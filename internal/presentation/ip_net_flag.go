@@ -1,6 +1,7 @@
 package presentation
 
 import (
+	"fmt"
 	"net"
 	"strings"
 )
@@ -16,19 +17,14 @@ func (f *IPNetFilterFlag) String() string {
 }
 
 func (f *IPNetFilterFlag) Set(s string) error {
-	splitted := strings.Split(s, ",")
-
-	for _, ip := range splitted {
-		_, ipNet, err := net.ParseCIDR(ip)
-		if err != nil {
-			return err
-		}
-		if ipNet == nil {
-			continue
-		}
-
-		*f = append(*f, ipNet)
+	_, ipNet, err := net.ParseCIDR(s)
+	if err != nil {
+		return err
+	}
+	if ipNet == nil {
+		return fmt.Errorf("invalid IP network: %s", s)
 	}
 
+	*f = append(*f, ipNet)
 	return nil
 }
