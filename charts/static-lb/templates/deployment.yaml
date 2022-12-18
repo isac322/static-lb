@@ -34,6 +34,18 @@ spec:
             {{- range $mapping := .Values.externalIPMappings }}
             - --external-ip-mapping={{ $mapping }}
             {{- end }}
+            {{- with .Values.includeIngressIPNets }}
+            - --include-ingress-ip-nets={{ join "," . | quote }}
+            {{- end }}
+            {{- with .Values.includeExternalIPNets }}
+            - --include-external-ip-nets={{ join "," . | quote }}
+            {{- end }}
+            {{- with .Values.excludeIngressIPNets }}
+            - --exclude-ingress-ip-nets={{ join "," . | quote }}
+            {{- end }}
+            {{- with .Values.excludeExternalIPNets }}
+            - --exclude-external-ip-nets={{ join "," . | quote }}
+            {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
