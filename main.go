@@ -107,7 +107,7 @@ func main() {
 	)
 	flag.Var(
 		&excludeExternalIPFilter,
-		"exclude-exclude-ip-nets",
+		"exclude-external-ip-nets",
 		"comma separated IP networks that filters External IP candidates out before assign. (default: empty)",
 	)
 	opts := zap.Options{
