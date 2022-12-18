@@ -152,8 +152,8 @@ func main() {
 			svcRepo,
 			internalIPMappings.Mappings(),
 			externalIPMappings.Mappings(),
-			excludeIngressIPFilter,
-			excludeExternalIPFilter,
+			includeIngressIPFilter,
+			includeExternalIPFilter,
 			excludeIngressIPFilter,
 			excludeExternalIPFilter,
 		)
