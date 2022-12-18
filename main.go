@@ -56,6 +56,11 @@ func main() {
 	var probeAddr string
 	var internalIPMappings presentation.IPMappingTargets
 	var externalIPMappings presentation.IPMappingTargets
+	var includeIngressIPFilter presentation.IPNetFilterFlag
+	var includeExternalIPFilter presentation.IPNetFilterFlag
+	var excludeIngressIPFilter presentation.IPNetFilterFlag
+	var excludeExternalIPFilter presentation.IPNetFilterFlag
+
 	flag.StringVar(
 		&metricsAddr,
 		"metrics-bind-address",
@@ -84,6 +89,26 @@ func main() {
 		&externalIPMappings,
 		"external-ip-mapping",
 		"where to assign node's external ips (enum: ingress, external).",
+	)
+	flag.Var(
+		&includeIngressIPFilter,
+		"include-ingress-ip-nets",
+		"comma separated IP networks that filters Ingress IP candidates before assign. (default: empty)",
+	)
+	flag.Var(
+		&includeExternalIPFilter,
+		"include-external-ip-nets",
+		"comma separated IP networks that filters External IP candidates before assign. (default: empty)",
+	)
+	flag.Var(
+		&excludeIngressIPFilter,
+		"exclude-ingress-ip-nets",
+		"comma separated IP networks that filters Ingress IP candidates out before assign. (default: empty)",
+	)
+	flag.Var(
+		&excludeExternalIPFilter,
+		"exclude-exclude-ip-nets",
+		"comma separated IP networks that filters External IP candidates out before assign. (default: empty)",
 	)
 	opts := zap.Options{
 		Development: true,
@@ -127,6 +152,10 @@ func main() {
 			svcRepo,
 			internalIPMappings.Mappings(),
 			externalIPMappings.Mappings(),
+			excludeIngressIPFilter,
+			excludeExternalIPFilter,
+			excludeIngressIPFilter,
+			excludeExternalIPFilter,
 		)
 	)
 

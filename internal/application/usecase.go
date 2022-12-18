@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"net"
 
 	"github.com/isac322/static-lb/internal/pkg/slices"
 
@@ -15,11 +16,15 @@ type Usecase interface {
 }
 
 type usecase struct {
-	endpointSliceRepo         EndpointSliceRepository
-	nodeRepo                  NodeRepository
-	serviceRepo               ServiceRepository
-	defaultInternalIPMappings []IPMappingTarget
-	defaultExternalIPMappings []IPMappingTarget
+	endpointSliceRepo               EndpointSliceRepository
+	nodeRepo                        NodeRepository
+	serviceRepo                     ServiceRepository
+	defaultInternalIPMappings       []IPMappingTarget
+	defaultExternalIPMappings       []IPMappingTarget
+	defaultIncludeIngressIPNetwork  []*net.IPNet
+	defaultIncludeExternalIPNetwork []*net.IPNet
+	defaultExcludeIngressIPNetwork  []*net.IPNet
+	defaultExcludeExternalIPNetwork []*net.IPNet
 }
 
 func New(
@@ -28,13 +33,21 @@ func New(
 	sr ServiceRepository,
 	defaultInternalIPMappings []IPMappingTarget,
 	defaultExternalIPMappings []IPMappingTarget,
+	defaultIncludeIngressIPNetwork []*net.IPNet,
+	defaultIncludeExternalIPNetwork []*net.IPNet,
+	defaultExcludeIngressIPNetwork []*net.IPNet,
+	defaultExcludeExternalIPNetwork []*net.IPNet,
 ) Usecase {
 	return usecase{
-		endpointSliceRepo:         esr,
-		nodeRepo:                  nr,
-		serviceRepo:               sr,
-		defaultInternalIPMappings: defaultInternalIPMappings,
-		defaultExternalIPMappings: defaultExternalIPMappings,
+		endpointSliceRepo:               esr,
+		nodeRepo:                        nr,
+		serviceRepo:                     sr,
+		defaultInternalIPMappings:       defaultInternalIPMappings,
+		defaultExternalIPMappings:       defaultExternalIPMappings,
+		defaultIncludeIngressIPNetwork:  defaultIncludeIngressIPNetwork,
+		defaultIncludeExternalIPNetwork: defaultIncludeExternalIPNetwork,
+		defaultExcludeIngressIPNetwork:  defaultExcludeIngressIPNetwork,
+		defaultExcludeExternalIPNetwork: defaultExcludeExternalIPNetwork,
 	}
 }
 
@@ -87,6 +100,8 @@ func (u usecase) AssignIPs(ctx context.Context, svc corev1.Service) (err error) 
 			break
 		}
 	}
+
+	targetIPs = u.filterTargetIPs(targetIPs, svc)
 
 	if u.isSynced(svc, targetIPs) {
 		return nil
