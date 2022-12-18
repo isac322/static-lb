@@ -121,7 +121,13 @@ func main() {
 		nodeRepo          = infrastructure.NewNodeRepository(mgr.GetClient())
 		svcRepo           = infrastructure.NewServiceRepository(mgr.GetClient())
 		endpointSliceRepo = infrastructure.NewEndpointSliceRepository(mgr.GetClient())
-		usecase           = application.New(endpointSliceRepo, nodeRepo, svcRepo)
+		usecase           = application.New(
+			endpointSliceRepo,
+			nodeRepo,
+			svcRepo,
+			internalIPMappings.Mappings(),
+			externalIPMappings.Mappings(),
+		)
 	)
 
 	if err = endpointSliceRepo.RegisterFieldIndex(context.Background(), mgr.GetFieldIndexer()); err != nil {
@@ -130,11 +136,9 @@ func main() {
 	}
 
 	if err = (&controllers.ServiceReconciler{
-		Client:                    mgr.GetClient(),
-		Scheme:                    mgr.GetScheme(),
-		Usecase:                   usecase,
-		DefaultInternalIPMappings: internalIPMappings.Mappings(),
-		DefaultExternalIPMappings: externalIPMappings.Mappings(),
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+		Usecase: usecase,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Service")
 		os.Exit(1)

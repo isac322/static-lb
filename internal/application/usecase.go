@@ -11,34 +11,34 @@ import (
 )
 
 type Usecase interface {
-	AssignIPs(
-		ctx context.Context,
-		svc corev1.Service,
-		internalIPMappings []IPMappingTarget,
-		externalIPMappings []IPMappingTarget,
-	) error
+	AssignIPs(ctx context.Context, svc corev1.Service) error
 }
 
 type usecase struct {
-	endpointSliceRepo EndpointSliceRepository
-	nodeRepo          NodeRepository
-	serviceRepo       ServiceRepository
+	endpointSliceRepo         EndpointSliceRepository
+	nodeRepo                  NodeRepository
+	serviceRepo               ServiceRepository
+	defaultInternalIPMappings []IPMappingTarget
+	defaultExternalIPMappings []IPMappingTarget
 }
 
-func New(esr EndpointSliceRepository, nr NodeRepository, sr ServiceRepository) Usecase {
+func New(
+	esr EndpointSliceRepository,
+	nr NodeRepository,
+	sr ServiceRepository,
+	defaultInternalIPMappings []IPMappingTarget,
+	defaultExternalIPMappings []IPMappingTarget,
+) Usecase {
 	return usecase{
-		endpointSliceRepo: esr,
-		nodeRepo:          nr,
-		serviceRepo:       sr,
+		endpointSliceRepo:         esr,
+		nodeRepo:                  nr,
+		serviceRepo:               sr,
+		defaultInternalIPMappings: defaultInternalIPMappings,
+		defaultExternalIPMappings: defaultExternalIPMappings,
 	}
 }
 
-func (u usecase) AssignIPs(
-	ctx context.Context,
-	svc corev1.Service,
-	internalIPMappings []IPMappingTarget,
-	externalIPMappings []IPMappingTarget,
-) (err error) {
+func (u usecase) AssignIPs(ctx context.Context, svc corev1.Service) (err error) {
 	var endpointIPs NodeIPs
 
 	switch {
@@ -67,7 +67,7 @@ func (u usecase) AssignIPs(
 	}
 
 	var targetIPs IPStatus
-	for _, mapping := range internalIPMappings {
+	for _, mapping := range u.defaultInternalIPMappings {
 		switch mapping {
 		case IPMappingTargetExternal:
 			targetIPs.ExternalIPs = append(targetIPs.ExternalIPs, endpointIPs.InternalIPs...)
@@ -77,7 +77,7 @@ func (u usecase) AssignIPs(
 			break
 		}
 	}
-	for _, mapping := range externalIPMappings {
+	for _, mapping := range u.defaultExternalIPMappings {
 		switch mapping {
 		case IPMappingTargetExternal:
 			targetIPs.ExternalIPs = append(targetIPs.ExternalIPs, endpointIPs.ExternalIPs...)

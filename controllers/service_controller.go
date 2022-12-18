@@ -40,10 +40,8 @@ import (
 // ServiceReconciler reconciles a Service object
 type ServiceReconciler struct {
 	client.Client
-	Scheme                    *runtime.Scheme
-	Usecase                   application.Usecase
-	DefaultInternalIPMappings []application.IPMappingTarget
-	DefaultExternalIPMappings []application.IPMappingTarget
+	Scheme  *runtime.Scheme
+	Usecase application.Usecase
 }
 
 //+kubebuilder:rbac:groups="",resources=services;endpoints;nodes,verbs=get;list;watch
@@ -69,7 +67,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	if err = r.Usecase.AssignIPs(ctx, service, r.DefaultInternalIPMappings, r.DefaultExternalIPMappings); err != nil {
+	if err = r.Usecase.AssignIPs(ctx, service); err != nil {
 		logger.Error(err, "unable to assign IPs to Service")
 		return ctrl.Result{Requeue: true}, err
 	}
