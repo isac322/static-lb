@@ -179,6 +179,19 @@ func TestUsecase_getIPNetFrom(t *testing.T) {
 			defaultVal:     []*net.IPNet{{IP: net.IPv4zero, Mask: net.IPv4Mask(0, 0, 0, 0)}},
 			expected:       []*net.IPNet{{IP: net.ParseIP("2603:c022:8005:302::"), Mask: net.CIDRMask(64, 128)}},
 		},
+		{
+			name: "annotation can reset default value",
+			svc: corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"some-annotation": "",
+					},
+				},
+			},
+			annotationName: "some-annotation",
+			defaultVal:     []*net.IPNet{{IP: net.IPv4zero, Mask: net.IPv4Mask(0, 0, 0, 0)}},
+			expected:       []*net.IPNet{},
+		},
 	}
 	for _, tc := range tests {
 		tc := tc
