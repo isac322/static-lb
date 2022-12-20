@@ -58,7 +58,7 @@ func (u usecase) AssignIPs(ctx context.Context, svc corev1.Service) (err error) 
 		return nil
 	}
 
-	targetIPs := u.mapIPs(nodeIPs.Unwrap())
+	targetIPs := u.mapIPs(nodeIPs.Unwrap(), svc)
 	targetIPs = u.filterTargetIPs(targetIPs, svc)
 
 	if u.isSynced(svc, targetIPs) {
