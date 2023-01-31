@@ -70,7 +70,7 @@ jobs:
           cache-max-size: 8g
 
       - name: Build
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           push: false
