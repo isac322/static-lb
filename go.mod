@@ -3,8 +3,8 @@ module github.com/isac322/static-lb
 go 1.19
 
 require (
-	github.com/onsi/ginkgo/v2 v2.8.3
-	github.com/onsi/gomega v1.27.1
+	github.com/onsi/ginkgo/v2 v2.8.4
+	github.com/onsi/gomega v1.27.2
 	github.com/stretchr/testify v1.8.2
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
