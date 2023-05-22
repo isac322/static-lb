@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"context"
+
 	"github.com/isac322/static-lb/internal/application"
 
 	corev1 "k8s.io/api/core/v1"
@@ -35,9 +36,5 @@ func (k K8sClientServiceRepository) AssignIPs(
 		newSvc.Status.LoadBalancer.Ingress[i].IP = ip
 	}
 
-	if err := k.k8sClient.Status().Update(ctx, newSvc); err != nil {
-		return err
-	}
-
-	return nil
+	return k.k8sClient.Status().Update(ctx, newSvc)
 }
