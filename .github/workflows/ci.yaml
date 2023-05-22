@@ -18,7 +18,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          args: --fix --timeout 5m --verbose
+          args: --fix --verbose
 
   test:
     runs-on: ubuntu-latest
