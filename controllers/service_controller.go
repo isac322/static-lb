@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // ServiceReconciler reconciles a Service object
@@ -112,13 +111,16 @@ func (r *ServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			}),
 		).
 		Watches(
-			&source.Kind{Type: &discoveryv1.EndpointSlice{}},
+			&discoveryv1.EndpointSlice{},
 			handler.EnqueueRequestsFromMapFunc(r.findLinkedServiceByEndpointSlice),
 		).
 		Complete(r)
 }
 
-func (r *ServiceReconciler) findLinkedServiceByEndpointSlice(endpointSlice client.Object) []reconcile.Request {
+func (r *ServiceReconciler) findLinkedServiceByEndpointSlice(
+	_ context.Context,
+	endpointSlice client.Object,
+) []reconcile.Request {
 	epSlice, ok := endpointSlice.(*discoveryv1.EndpointSlice)
 	if !ok {
 		return []reconcile.Request{}
